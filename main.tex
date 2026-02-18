@@ -1,0 +1,2084 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{subcaption}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+\usepackage{longtable} 
+\usepackage{caption}
+\usepackage{url}
+\usepackage{endnotes}
+\usepackage{setspace}
+\usepackage{etoolbox}
+\usepackage{setspace}
+\usepackage{etoolbox}
+\usepackage{booktabs}
+\usepackage[nottoc]{tocbibind}
+\usepackage[strings]{underscore}
+\usepackage[style=numeric]{biblatex}
+\usepackage{authblk} 
+
+\addbibresource{references.bib}
+
+\patchcmd{\thebibliography}{\settowidth}
+  {\setlength{\itemsep}{1em plus 1.5em} \settowidth}{}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0em}
+\begin{document}
+
+\tableofcontents
+\newpage
+
+
+
+
+
+\section*{Highlights}
+\begin{itemize}
+    \item Method for extracting high-risk profiles from accident datasets
+    \item Frequency analysis aligned clustering analysis
+    \item Selecting economically optimal policy changes for traffic-accident mitigation
+    \item Parameterized data-mining with a clustering heuristic
+    
+\end{itemize}
+
+\section*{Abstract}
+Road traffic accidents remain a leading cause of injury and death worldwide, with more than 1.19 million fatalities annually. While frequency analysis has traditionally been applied to accident datasets to identify common profiles, such methods overlook representativeness across related accident types. This study investigates driver and accident profiles in Barcelona by combining frequency analysis with clustering methods, specifically K-modes, to uncover profiles that are both highly prevalent and broadly representative of accident patterns. Using a merged dataset of police accident reports, vehicle information, and traffic density data (12,928 records), we conducted feature engineering and applied dimensionality reduction, association measures, and unsupervised learning. 
+
+Our method identifies optimal driver profiles: the sets of driver attributes which, when targeted will correspond to the greatest reduction in vehicle accidents. 
+% discuss hte balance - clustering - minimal set of profies
+
+The results demonstrate that clustering enhances traditional frequency analysis by incorporating structural relationships between accident profiles, allowing for more targeted and impactful policy recommendations. This dual approach provides a scalable framework for urban governments seeking data-driven strategies to improve road safety and prioritize interventions.
+
+% Our methodology highlights critical variables such as driver age, gender, vehicle type, accident type, and temporal factors, revealing distinct and interpretable clusters of high-risk drivers.
+
+% rather highlihghting the "driver agere ..."
+% emphasize that our method identifies groups of profiles which will maximize impactj
+% it would be interesting to explore other datasets and other applications!
+
+% Every year, the lives of over a million people are violently short by road traffic accidents, demanding urgent and precise policy action––often straining the already constrained budgets of local municipalities. Current profiling methods for categorical data, like frequency analysis and standard clustering, fail to provide users with adequate control over profile fidelity, resulting in solutions that are either too broad for efficient policy targeting or too specific to maximize impact. To overcome this, we introduce a novel, constraint-driven clustering methodology designed for the extraction and incremental comparison of most-representative profiles. The method first identifies an optimal cluster solution and then uniquely subjects the resulting profiles to a minimum size threshold constraint. Dynamically adjusting this threshold allows analysts to explicitly control a critical trade-off: decreasing the constraint yields a profile set with high overall coverage (broad impact), while increasing it yields a smaller, more precise set of dominant profiles (high fidelity). This adjustable granularity moves beyond fixed results, allowing users to incrementally compare profile-sets to effectively balance policy intervention cost against affected population magnitude. 
+% In the following paper, we present a novel clustering framework to simultaneously distill and incrementally compare representative sets of profiles at varying sensitivities from categorical datasets.
+\newpage
+
+\section{Introduction}
+Every year, the lives of approximately 1.19 million people are cut short as a result of a road traffic crash. Between 20 and 50 million more people suffer nonfatal injuries, with many incurring a disability\cite{whoRoadTraffic}. Notably, many of these common road traffic accidents can be prevented \cite{goniewicz_road_2016}. Unfortunately, without intervention, annual traffic deaths do not improve. To advance road safety, governments must take action, raising the question: Which specific driver profile(s), should policy changes target to achieve the greatest impact? Answering this question is exactly what we sought to do.
+
+\vspace{\baselineskip}
+Previous research has explored methods such as hot spots, frequency and regression analysis, time series, network analysis, supervised learning algorithms, NLP, and clustering algorithms. \cite{errahmouni_barkam_using_2023,santos_machine_2021,bokaba_comparative_2022} Unfortunately, much of this research falls short when it comes to producing robust and representative high-risk driver profiles or accident characteristics using unsupervised algorithms. 
+\vspace{\baselineskip}
+
+In the analysis of traffic accidents, while the overall number of occurrences is well known, the primary objective extends beyond simple occurrence counting. Frequency analysis is a widely used method, which involves exhaustively counting every combination of accident attributes within an accident data set, producing independently strong profiles. \cite{noauthor_frequency_nodate} For example, the most frequent profile, defined by the highest number of combinations of five variables, is observed 641 times, closely followed by similar profiles. Frequency analysis, however, does not consider the indirectly impacted neighbors (that are otherwise produced with clustering) when ranking high-risk profiles. To this end, clustering analysis helps identify features that are not only highly frequent but also representative of the largest volume of accidents. However, clustering alone fails to provide necessary constraints and fine control over the final profiles.
+Accordingly, we introduce and apply parametric cluster search: a method to incrementally analyze the frontier of most impactful profiles.
+\vspace{\baselineskip}
+
+
+
+% This dual consideration manifests as a much more effective selection of profiles for targeted interventions and prioritization in accident mitigation efforts.
+% Simply counting occurrences highlights high-frequency profiles, but it does not capture how representative these profiles are of the broader accident dataset.
+% To address this limitation, we aim to identify profiles that are both statistically significant in their occurrence and broadly indicative of other accidents. By combining frequency with representativeness, we obtain a more effective selection of profiles for targeted interventions and prioritization in accident mitigation efforts.
+
+Our methodology combines a novel constrained clustering methodology and frequency analysis to extract and incrementally analyze groups profiles which are both independently and indirectly influential. Our methods works by grouping similar accidents and, within each group, identifying the combinations of the most frequent or repetitive variables. These larger, representative profiles are then selected as indicators of prevalent accident types. To optimize this process, we explored a wide range of alternatives, including defining the optimal number of variables, the ideal number of clusters, and the specific variables to select. This exploration was guided by a defined goodness-of-fit metric that allowed us to choose the clustering solution best suited to our analytical needs.
+\vspace{\baselineskip}
+
+The implications of our method include sensitivity analysis and incremental profile analysis, enabling a convenient interface for economic and policy evaluation, particularly in settings where accident prevalence and intervention costs strain the already constrained budgets of local municipalities. Existing profiling methods for categorical data, such as frequency analysis and standard clustering, provide limited control over profile fidelity, often producing results that are either too broad for effective policy targeting or too narrow to maximize impact.
+\vspace{\baselineskip}
+
+To address this limitation, we introduce a constraint-driven clustering methodology for the extraction and incremental comparison of most-representative profiles. The method groups similar accidents and identifies recurring combinations of variables within each cluster to form representative profiles of prevalent accident types. An optimal cluster configuration is first determined using a predefined goodness-of-fit metric, after which resulting profiles are subjected to a minimum size threshold constraint.
+\vspace{\baselineskip}
+
+Adjusting this threshold enables explicit control over the trade-off between coverage and precision: lower thresholds produce profile sets with broader coverage, while higher thresholds yield smaller, more dominant profiles with greater fidelity. This adjustable granularity moves beyond fixed clustering outputs, allowing users to incrementally compare profile sets and balance intervention cost against affected population magnitude.
+
+
+\clearpage
+
+\section{Data}
+\subsection{Data Source and Preparation}
+The dataset was generated from two primary public sources provided by the Barcelona City Council \cite{noauthor_opendata-ajuntament_nodate}. The data consist primarily of accident reports and descriptions from the Guardia Urbana, who investigate traffic incidents. Climate data including humidity levels, temperatures, and other meteorological information were retrieved from CEMA Open Data Catalonia. 
+
+\vspace{\baselineskip}
+The Barcelona City Council provided several datasets, of which we used three: person-level information, accident causation data, and vehicle involvement records. During the merging process, a discrepancy was identified—the vehicle dataset contained more than 27,000 records, while the causation and person datasets contained only 16,771 \cite{noauthor_opendata-ajuntament_nodate, noauthor_web_nodate}. We attributed this inconsistency to the fact that the vehicle dataset includes all vehicles involved in accidents, while the causation and person datasets only record individuals cited by police. Records for vehicles not cited as causing an accident were excluded as irrelevant to our causal analysis. Similarly, accidents involving multiple cited individuals are treated as separate records.\vspace{\baselineskip}
+
+Additionally, records for non-drivers (i.e., pedestrians and passengers) were excluded, as this study focuses exclusively on driver profiles in Barcelona. These exclusions accounted for 18\% of the original data, leaving 12,928 records for analysis.\vspace{\baselineskip}
+
+The dataset originated from three public sources: police records \cite{noauthor_opendata-ajuntament_nodate}, OpenStreetMap \cite{noauthor_web_nodate}, and OpenBCN (2024) \cite{noauthor_opendata-ajuntament_nodate}. Each source provided categorical variables related to accidents and traffic density. The police dataset compiled accident reports documenting details such as time of occurrence, driver gender, and vehicle type. The OpenBCN dataset provided traffic density measurements from 527 locations across Barcelona, classified into four density zones. These categorical datasets were merged for K-modes clustering analysis.\vspace{\baselineskip}
+
+The police report dataset defined the primary set of variables for analysis. For each accident, police documented descriptions and characteristics in a standardized format. Table \ref{tab:discarded_vars} presents the complete set of variables from police reports and traffic density data, along with justification for those excluded from the analysis.
+
+
+
+\begin{longtable}{lll}
+\caption{Discarded variables by category with justification (* denotes engineered features)}
+\label{tab:discarded_vars}\\
+\hline
+\textbf{Category} & \textbf{Discarded Variables} & \textbf{Justification} \\
+\hline
+\endfirsthead 
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{} -- continued from previous page}} \\
+\hline
+\textbf{Category} & \textbf{Discarded Variables} & \textbf{Justification} \\
+\hline
+\endhead 
+\\
+\hline
+\multicolumn{3}{r}{{\small\textit{Continued on next page}}}\\
+\endfoot
+\\
+\hline
+\multicolumn{3}{l}{\small\textit{*Denotes an engineered feature.}} \\
+\endlastfoot 
+\textbf{Accident Details} & Accident\_severity & Outcome variable, not predictive\\
+& Codi\_Incident & Administrative code, not predictive \\
+& Descripcio\_Incident & Text description, difficult to process \\
+& Mediate\_cause & Ambiguous and inconsistent \\
+& Number\_dead & Outcome variable, not predictive   \\
+& Number\_of\_vehicles\_involved & Outcome variable, not predictive   \\
+& Number\_serious\_injured & Outcome variable, not predictive  \\
+& Number\_slight\_injured & Outcome variable, not predictive  \\
+& Number\_victims & Outcome variable, not predictive   \\
+& Numero\_incidents\_GUB & Administrative reference number \\
+
+\\
+\hline
+
+\textbf{Vehicle Information} & Brand & Too many categories, not predictive \\
+& Color & Unreliable and not predictive \\
+& Color\_binned* & Even binned, lacks predictive value \\
+& Model & Too granular, vehicle\_type sufficient \\
+
+\\
+\hline
+
+\textbf{Location Data} & Area\_code & Administrative code, not predictive \\
+& Coordenada\_UTM\_X\_ED50 & Overly specific location data \\
+& Coordenada\_UTM\_Y\_ED50 & Overly specific location data \\
+& District & Granular and skewed \\
+& District\_code & Administrative code, not predictive \\
+& Latitude & Overly specific location data \\
+& Longitude & Overly specific location data \\
+& Neighborhood & Granular and skewed \\
+& Num\_postal & Administrative code, not predictive \\
+& Street\_code & Administrative code, not predictive \\
+
+\\
+\hline
+
+\textbf{Driver/Person Data} & Driver\_displacement\_reason & Low coverage \& value \\
+& File\_num & Administrative reference number \\
+& License\_age & Correlated with age binned \\
+& License\_age\_binned* & Redundant \\
+& Person\_type & Always "conductor" (driver) \\
+
+\\
+\hline
+
+\textbf{Pedestrian Data} & Pedestrian\_hit\_location & Non-causal outcome \\
+& Pedestrian\_situation & Irrelevant for drivers \\
+& Reason\_displacement\_pedestrian & Too specific  \\
+
+\\
+\hline
+
+\textbf{Time Variables} & Day & Captured by Day\_name \& Day\_type \\
+& Hour & Captured by Day\_shift \\
+& Hour\_quadrant* & Captured by Day\_shift \\
+& Month & Captured by Season \\
+& Month\_name & Redundant with Season \& Month \\
+& Quarter & Season already captured \\
+& Year & Always 2024 \\
+
+\\
+\hline
+
+\setlength{\tabcolsep}{10pt}
+\textbf{Weather Data} & Humidity\_Mean & Unhelpful \& not predictive \\
+& Precipitation & Unhelpful \& not predictive \\
+& Pressure\_Mean & Unhelpful \& not predictive \\
+& Solar\_Radiation & Unhelpful \& not predictive \\
+& Temp\_Mean & Seasonal effects already captured \\
+& Wind\_Dir\_Mean & Unhelpful \& not predictive \\
+& Wind\_Speed\_Mean & Unhelpful \& not predictive \\
+\end{longtable}
+
+
+
+\section{Alternative Methods}
+Before arriving at our final approach, we investigated several clustering-based profiling methods over an extended period of experimentation. These methods sought to balance two related but distinct objectives: identifying profiles supported by a substantial number of accidents, and ensuring that those profiles remained interpretable summaries of coherent accident groups.
+
+\vspace{\baselineskip}
+\textbf{Initial Scoring Approach.} Our first method generated clusterings across a range of variable subsets and cluster counts. For each clustering, we computed the relative frequency of each attribute value within each cluster. Profiles were constructed by selecting attributes whose values exceeded a dominance threshold (initially set at 75\%), and a profile was considered adequate if it contained at least four dominant attributes. Each clustering was then scored by the total number of accidents contained in adequate clusters.
+
+\vspace{\baselineskip}
+While this approach produced coherent cluster-level summaries, we observed that high-scoring clusterings did not consistently align with the most frequently occurring accident combinations in the raw data. Extensive sensitivity analyses—varying dominance thresholds from 60\% to 95\% and minimum profile sizes from 4 to 6 attributes—yielded similar behavior. These results suggested that optimizing cluster coverage alone was insufficient to ensure that the resulting profiles reflected globally prevalent accident patterns.
+
+\vspace{\baselineskip}
+\textbf{Refined Scoring Methods.} To better connect cluster structure to profile representativeness, we introduced a profile precision component, defined as the proportion of accidents within a cluster that exactly matched its representative profile. We then explored a family of scoring functions that combined cluster size, profile precision, and profile length under varying weights and functional forms:
+\begin{align*}
+& \text{(for } p \in [0,1], \text{ Profile Adequacy} \in [4,6], \text{ Value Adequacy} \in [60, 95]) \\
+& \text{Score} = \sum\big((p \cdot |C_m| + (1-p) \cdot PS_m) \cdot \text{Adequacy}(C_m) \big) \\
+& \text{Score} = \sum\big(({|C_m|}^{p} \cdot {PS_m}^{(1-p)}) \cdot \text{Adequacy}(C_m) \big) \\
+& \text{Score} = \sum\big((p \cdot |C_m| + (1-p) \cdot PS_m + |\text{Profile}_m|) \cdot \text{Adequacy}(C_m) \big) \\
+& \text{Score} = \sum\big(({|C_m|}^{p} \cdot {PS_m}^{(1-p)} \cdot |\text{Profile}_{m}|) \cdot \text{Adequacy}(C_m) \big)
+\end{align*}
+
+\vspace{\baselineskip}
+Across a broad range of parameter configurations, these iterations produced few improvements and didn't reliably surface the most common accident profiles in the dataset. In retrospect, this outcome was expected: all scoring variants continued to evaluate cluster-level properties, implicitly assuming that strong internal structure would translate into globally frequent profiles.
+
+\vspace{\baselineskip}
+This analysis clarified an important distinction between cluster quality and profile prevalence. Clustering is effective at organizing accidents into internally consistent groups, but cluster representativeness does not imply that the induced profiles occur frequently as exact attribute combinations across the dataset. As a result, optimizing clustering objectives alone is insufficient when profile frequency is the primary target.
+
+\vspace{\baselineskip}
+To try and alleviate the earlier shortcomings we decided to try explicitly incorporating global counting. Rather than treating profile frequency as a by-product of clustering, the final method constrains and evaluates profiles using direct occurrence counts over the full dataset, while leveraging clustering only as a structural aid. The details of this counting-constrained approach are described in Section~\ref{sec:Method}.
+
+
+
+
+
+
+\clearpage
+\section{Methodology}
+\label{sec:Method}
+ The methodology first involves defining key analytical parameters like the desired number of clusters and profile characteristics. A wide range of clusterings are generated by systematically varying these parameters. Finally, we apply a novel selection metric to evaluate all previously generated clusterings and identify the optimal set of profiles.
+\vspace{\baselineskip}
+\vspace{\baselineskip}
+
+\textbf{Configuration} 
+
+\vspace{\baselineskip}
+The first step of our method involves defining the following parameters (Note. Profile Count Threshold that you will adjust when conducting incremental analysis of best profiles)
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{l p{12cm}}
+\\
+\hline
+\textbf{Parameter} & \textbf{Description} \\
+\hline
+Profile count threshold & The minimum value for a cluster's profile count $\text{count}(p_S)$ to be considered for scoring \\
+Desired profile length & The number of values comprising each desired high-risk profile \\
+Variables & Identify the variables you intend to use for clustering. Strive for informative disentangled variables with similar cardinality. e.g., [Vehicle\_type\_binned, Gender, Age\_binned, Day\_shift, Day\_name\_binned, Accident\_type\_binned, Season, Traffic\_density\_binned, Day\_type] \\
+{[k-low, k-high]} & Identify the upper and lower bound for the number of clusters (candidate profiles) produced. These bounds bounds effectively serve to regulate the granularity of the candidate profiles. \\
+\hline
+\end{tabular}
+\caption{Method Parameters}
+\label{tab:clustering_params}
+\end{table}
+
+\begingroup
+\vspace{\baselineskip}
+\vspace{\baselineskip}
+
+\textbf{Clustering} 
+
+\vspace{\baselineskip}
+After defining parameters, use a clustering algorithm (K-modes) to produce a clustering for every cartesian combination of parameters: k-low $\leq k \leq $ k-high (number of clusters produced within the clustering), $\{S \subseteq \text{Variables}: \text{profile-len} \leq |S|\}$. 
+\vspace{\baselineskip}
+\vspace{\baselineskip}
+
+\textbf{Processing}
+
+\vspace{\baselineskip}
+Given our  exhaustive set of clusterings, summarize each one with a table of relative frequency (of each variable's label within a cluster ). The index (the two left-most columns labeled \enquote{VARIABLE} and \enquote{value}), consists of the different variables used for the particular clustering, and the respective values each variable can take on. The remaining columns (labeled 0 through k) represent each cluster the particular clustering.
+
+We interpret the values by taking (eg. 70.02 from column \enquote{0}, variable \enquote{Vehicle\allowbreak\_type\_binned}, value \enquote{Car}) to realize that 70.02 percent of cluster 0's accidents occurred with Cars. 
+
+In the table below we highlight the adequate values––the relative frequencies greater than 70. The set of labels corresponding to the highlighted values in a single column can be considered a cluster's profile.
+
+\endgroup
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{summary_table.png}
+\end{figure}
+
+\begingroup
+% The threshold parameters govern the balance between representativeness, granularity, and computational feasibility in clustering-based profiling. The Value\_adequacy\_threshold defines the minimum frequency for a feature value to be considered characteristic of a cluster; excessively lowering it compromises representativeness by admitting values not prevalent across most cluster members. Instead of relaxing this threshold in sparse datasets, tuning the K\_range—the number of clusters—offers a more robust means of achieving meaningful partitions by optimizing cluster compactness and interpretability. The variable set must be selected with respect to policy relegance and feasibility, while avoiding multicollinearity and ensuring comparable cardinality to prevent bias in feature qualification. The Profile\_size parameter, reflecting the desired cluster resolution, has no intrinsic optimum but should scale with the Var\_range, which defines the number of variables sampled during clustering; expanding Var\_range enhances model expressivity but yields diminishing returns and higher computational cost. Finally, the Count\_Threshold, which filters profiles by minimum occurrence count, is application-specific—higher thresholds ensure statistical robustness, whereas lower ones improve coverage, as might be preferred in policy-driven analyses seeking broader intervention targets.
+The threshold parameters govern the balance between representativeness, granularity, and computational feasibility in clustering-based profiling. Adjusting the number of clusters within the range $[K\_low, K\_high]$ offers a more robust means of achieving meaningful partitions by optimizing cluster compactness and interpretability. The variable set must be selected with respect to policy relevance and feasibility, while avoiding multicollinearity and ensuring comparable cardinality to prevent bias in feature qualification. The Profile\_size parameter, reflecting the desired cluster resolution, has no intrinsic optimum but should scale appropriately to balance model expressivity and computational cost. Finally, the Count\_Threshold, which filters profiles by minimum occurrence count, is application-specific—higher thresholds ensure statistical robustness, whereas lower ones improve coverage, as might be preferred in policy-driven analyses seeking broader intervention targets.
+
+Define a global frequency count––the raw number of occurrences corresponding to any combination of variable labels (selecting one or zero labels from each category) computed across the entire dataset.
+% Next, for each cluster, define the following statistics, (``Profile Count'', ``Profile Size'', ``Cluster Percentage of Drivers'', ``Cluster Adequacy''). \\
+Next, for each cluster, define the following statistics, (``Profile Count'', ``Profile Size'', ``Cluster Adequacy''). \\
+
+Let ``Profile Count'' be the number of accidents (associated with the cluster's profile). \\
+Let ``Profile Size'' be the number of labels within a cluster's profile. \\
+% Let ``Cluster Percentage of Drivers'' be be the number of accidents assigned to the cluster divided by the total number of accidents in the entire dataset times 100. \\
+Let ``Cluster Adequacy'' be defined as True (1) if ``Profile Size'' $\geq$ ``Desired Profile Length'' and ``Profile Count'' $\geq$ ``Profile Count Threshold'' (otherwise False (0)).
+\vspace{\baselineskip}
+\vspace{\baselineskip}
+
+\textbf{Scoring}
+
+\vspace{\baselineskip}
+We can score each clustering by calculating the sum of accidents associated with adequate clusters.
+\[ \overset{k}{\underset{i=0}{\Sigma}}((\text{``Cluster Count''})_i\cdot(\text{``Cluster Adequate''})_i) \]
+Our highest scoring clustering can then be used to identify the frontier of optimal profile sets. \\
+
+We can either accept all the adequate profiles in our optimal clustering as the final profile set, or, if necessary, administer additional constraints. The we selected further adjustments to ``Profile Count Threshold'' as our additional constraint. By modulating increases to the ``Profile Count Threshold'' we are able to incrementally compare increasingly tight or restrictive profile definitions, ensuring that only clusters with sufficient representation are retained, or most impactful clusters are retrieved.
+
+
+
+\clearpage
+\section{Results}
+\label{sec:Results}
+While developing and refining our methodology we ran nearly 150 experiments. We identified experimental run 125 as one of the more refined and representative experiments. The table below summarizes the configuration arguments used during the experiment. The subsequent analysis below presents the outcomes.
+
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Parameter} & \textbf{Value} \\
+        \midrule
+        Date & July 2, 2025 \\
+        Value Adequacy Threshold & 70 \\
+        Profile Size & 5 \\
+        K Range & [10, 20] \\
+        Variable Range & [5, 9] \\
+        Variables & \begin{tabular}[t]{@{}l@{}}
+                      Vehicle Type (binned) \\
+                      Gender \\
+                      Age (binned) \\
+                      Day Shift \\
+                      Day Name (binned) \\
+                      Accident Type (binned) \\
+                      Season \\
+                      Traffic Density (binned) \\
+                      Day Type
+                    \end{tabular} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Run 125 Configuration}
+    \label{tab:run125_parameters}
+\end{table}
+
+We tried several different count\_thresholds in order to observe the relationship with their scores (dataset representativeness) and to determine the optimal \enquote{Count\_Threshold} (\enquote{Count\_Threshold}). We preformed our clustering method for several different count\_thresholds and observed the resulting clustering, profiles, and scores. The figure below plots the scores of the highest scoring clusterings against the count\_threshold they were generated at. The second figure, is a close-up of the first graph, focusing on the first Figure's \enquote{elbow}––region where marginal \enquote{Cluster Count} changes from most significant to negligible. For this reason, the \enquote{elbow} region contains our most relevant and interesting clusterings and profiles because this is where the changes in our parameter Count\_Threshold yield the largest change in impact.
+
+
+\begin{figure}[H]   
+    \centering
+    \begin{minipage}[b]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Count_Threshold_Score_graphs/run125_full}
+        \caption{Counting Threshold [0, 600] vs Score}
+        \label{fig:score-full (run 125)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Count_Threshold_Score_graphs/run125_subset}
+        \caption{Counting Threshold [350, 500] vs Score}
+        \label{fig:score-partial (run 125)}
+    \end{minipage}
+\end{figure}
+
+\begingroup
+\setlength{\parskip}{1em} 
+
+The results below contain the best clustering (selected by the method above) and tables summarizing the dominant profiles of the respective qualifying adequate clusters from clusterings preformed at varying Count\_Thresholds.\vspace{\baselineskip}
+
+* We can interpret the results below by observing that identified profiles correspond to qualifying subsets of the highlighted profiles (labels from the value column corresponding to highlighted values in cluster columns).\vspace{\baselineskip}
+
+
+Top clustering @ Counting\_Threshold = 390 
+
+\endgroup
+
+\resizebox{\linewidth}{!}{
+    \begin{tabular}{lrrr}
+        \toprule
+        Profile & Cluster Count & Profile Count & Profile Ranking \\
+        \midrule
+        \parbox{95mm}{[Car, H, Fairly\allowbreak\_dense\allowbreak\_traffic, Tarda, Workday ]} & 4403 & 647 & 1 \\
+        \bottomrule
+    \end{tabular}
+}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Count_Threshold_tables/run125/390}
+\end{figure}
+
+\begingroup
+\setlength{\parskip}{1em} 
+
+Experiments with a Count\_Threshold between 390 and 647 yield the same clustering and profile (as seen in the result for Count\_Threshold = 390). Performing clustering with a Count\_Threshold greater than 647 fails to capture any profiles, since the maximum profile count in the dataset is 647. However, the result from Count\_Threshold = 390 is of limited interest as it yields only a single profile. \vspace{\baselineskip}
+
+Top clustering @ Counting\_Threshold = 365
+
+\endgroup
+
+\resizebox{\linewidth}{!}{
+    \begin{tabular}{lrrr}
+    \toprule
+    Profile & Cluster Count & Profile Count & Profile Ranking \\
+    \midrule
+    \parbox{95mm}{[Fairly\_dense\_traffic, Car, Tarda, Workday, H]} & 3324 & 647 & 1 \\
+    \parbox{95mm}{[Lateral collision, Tarda, Motorcycle, H, Workday]} & 840 & 367 & 22 \\
+    \parbox{95mm}{[Lateral collision, H, Workday, Matí, Fairly\_dense\_traffic]} & 495 & 390 & 14 \\
+    \bottomrule
+    \end{tabular}
+}
+\begin{figure}[H]
+   \centering
+   \includegraphics[width=1\linewidth]{Count_Threshold_tables/run125/365}
+\end{figure}
+
+\begingroup
+\setlength{\parskip}{1em} 
+
+Decreasing the Count\_Threshold to 365 results in a significant increase in the number of qualifying profiles. With three profiles and nearly 36\% dataset coverage, Count\_Threshold = 365 represents a strong candidate for optimal parameter selection.\vspace{\baselineskip}
+
+Top clustering @ Counting\_Threshold = 335 
+
+\endgroup
+
+\resizebox{\linewidth}{!}{
+    \begin{tabular}{lrrr}
+    \toprule
+    Profile & Cluster Count & Profile Count & Profile Ranking \\
+    \midrule
+    \parbox{95mm}{[Fairly\_dense\_traffic, Car, Tarda, Workday, H]} & 3324 & 647 & 1 \\
+    \parbox{95mm}{[Lateral collision, Tarda, Motorcycle, H, Workday]} & 840 & 367 & 22 \\
+    \parbox{95mm}{[Motorcycle, Bumper-bumper, Matí, H, Workday]} & 778 & 337 & 41 \\
+    \parbox{95mm}{[Lateral collision, H, Workday, Matí, Fairly\_dense\_traffic]} & 495 & 390 & 14 \\
+    \bottomrule
+    \end{tabular}
+}
+\begin{figure}[H]
+   \centering
+   \includegraphics[width=1\linewidth]{Count_Threshold_tables/run125/335}
+\end{figure}
+
+\begingroup
+\setlength{\parskip}{1em} 
+Further decreasing the Count\_Threshold to 335 yields one additional profile. However, this additional profile, representing a cluster with 337 accidents, results in only a 2\% increase in dataset coverage. Due to this marginal improvement, this configuration provides limited additional value.\vspace{\baselineskip}
+
+Top clustering @ Counting\_Threshold = 280 
+
+\endgroup
+
+\resizebox{\linewidth}{!}{
+    \begin{tabular}{lrrr}
+        \toprule
+        Profile & Cluster Count & Profile Count & Profile Ranking \\
+        \midrule
+        \parbox{95mm}{[Fairly\_dense\allowbreak\_traffic, Car, Tarda, Workday, H]} & 3324 & 647 & 1 \\
+        \parbox{95mm}{[Lateral\_collision, Tarda, Motorcycle, H, Workday]} & 840 & 367 & 22 \\
+        \parbox{95mm}{[Matí, Workday, Car, Sparse\allowbreak\_traffic, H]} & 801 & 282 & 93 \\
+        \parbox{95mm}{[Motorcycle, Bumper-bumper, Matí, H, Workday]} & 778 & 337 & 41 \\
+        \parbox{95mm}{[Lateral\_collision, H, Workday, Matí, Fairly\_dense\allowbreak\_traffic]} & 495 & 390 & 14 \\
+        \bottomrule
+    \end{tabular}
+}
+\begin{figure}[H]
+   \centering
+   \includegraphics[width=1\linewidth]{Count_Threshold_tables/run125/280}
+\end{figure}
+Decreasing the Count\_Threshold to 280 yields five profiles with a total dataset coverage of 48\%. While this increase is notable, a threshold of 280 may be considered too low for robust statistical significance. Whether the results from Count\_Threshold = 280 are appropriate depends on the specific application context and available resources for policy intervention.
+
+
+\clearpage
+
+\section{Discussion}
+Our method yields the optimal set of driver accident profiles for a given Count\_Threshold and parameter configuration. The strength of this approach lies in its flexibility: policymakers can tune the method to generate more or fewer profiles, depending on available resources and strategic priorities.
+
+From economic and policy perspectives, this flexibility is especially valuable.\cite{bastida_economic_2004}
+% \endnote{https://journals.lww.com/jtrauma/abstract/2004/04000/the_economic_costs_of_traffic_accidents_in_spain.24.aspx}
+When resources are limited, decision-makers can focus on the highest-risk profiles to ensure targeted and efficient intervention. Conversely, when more resources become available, the method supports broader targeting by including additional profiles enabling the capture of smaller or emerging risk patterns and improving overall traffic safety outcomes. 
+The flexibility to adjust profile size gives our method agility, enabling users to extract profiles at a level of specificity that both their policy interventions can act upon and the data can support.
+
+
+\subsection{Policy Implications}
+Although our method yields multiple optimal clusterings, the final selection of a single best clustering is context-dependent and must be made by the analyst. The clusterings presented in Section \ref{sec:Results} were selected based on the presence of inflection points in the Count\_Threshold versus Score curve. While these inflection points indicate significant marginal returns, multiple such points typically exist, making the final selection dependent on application-specific constraints such as available resources or policy objectives.
+
+Given the significant marginal improvement observed at Count\_Threshold = 365 in our analysis, this configuration can be considered optimal. The set of profiles identified at Count\_Threshold = 365 includes: \\
+\vspace{\baselineskip}
+
+\resizebox{\linewidth}{!}{
+    \begin{tabular}{lrrr}
+    \toprule
+    Profile & Cluster Count & Profile Count & Profile Ranking \\
+    \midrule
+    \parbox{95mm}{[Fairly\_dense\_traffic, Car, Tarda, Workday, H]} & 3324 & 647 & 1 \\
+    \parbox{95mm}{[Lateral collision, Tarda, Motorcycle, H, Workday]} & 840 & 367 & 22 \\
+    \parbox{95mm}{[Lateral collision, H, Workday, Matí, Fairly\_dense\_traffic]} & 495 & 390 & 14 \\
+    \bottomrule
+    \end{tabular}
+} \vspace{\baselineskip}
+
+
+To achieve the most significant impact on vehicle accidents in Barcelona, interventions should target drivers with the following attribute combinations: [Fairly\_dense\_traffic, Car, Tarda, Workday, H], [Lateral collision, Tarda, Motorcycle, H, Workday], and [Lateral collision, H, Workday, Matí, Fairly\_dense\_traffic]. Notably, male gender (H) and workdays appear in all three profiles, suggesting that policies targeting male drivers on workdays should receive particular priority. The covariance between Gender and Day\_Type is 0.02, indicating these attributes are largely independent.
+
+\endgroup
+
+% \subsection{Thresholds}
+% \subsubsection{Value Adequacy Threshold}
+% This parameter determines the minimum frequency threshold for a value to be considered representative of a profile. Substantially decreasing the Value Adequacy Threshold is not recommended because, beyond a certain point, newly qualified values (despite being cluster modes) cease to be truly representative—that is, most accidents in the cluster will not exhibit these values.
+% \subsubsection{K Range}
+% Adjusting the number of clusters provides a more robust alternative to modifying the Value Adequacy Threshold when working with sparse data. Exploring a wide range of K values is recommended to achieve an optimal balance between cluster size and representativeness.
+
+% \subsubsection{Variable Selection}
+% Variable selection should be guided by policy relevance and feasibility. Analysts should consider whether policy interventions targeting each feature are both practical and impactful. \vspace{\baselineskip}
+
+% Particular care should be taken to avoid multicollinear variables, as clustering algorithms are susceptible to bias from correlated features. Additionally, maintaining similar cardinality across variables is important, as high-cardinality variables (assuming uniform distributions) may be disadvantaged relative to lower-cardinality variables during profile qualification.
+
+% \subsubsection{Profile Size}
+% No universally optimal value exists for this parameter. Profile size is determined by the analyst's research objectives and the desired level of specificity. However, increasing the profile size requires expanding the variable range lower bound and may benefit from increasing the number of clusters considered.
+
+% \subsubsection{Variable Range}
+% The variable range should include values at least as large as the selected profile size. While expanding the variable range provides additional flexibility for identifying clusterings with more distinct profiles, the benefits exhibit diminishing marginal returns and may become computationally prohibitive at higher values.
+
+% \subsubsection{Count Threshold}
+% Although we selected Count\_Threshold = 365 as optimal for this analysis, the ideal threshold varies across datasets and applications. For example, a government allocating substantial resources to traffic accident intervention may benefit from targeting additional profiles despite their lower prevalence, opting for a decreased Count\_Threshold to maximize coverage.
+
+\begingroup
+\setlength{\parskip}{1em} 
+
+\subsection{Future Work}
+Future research could explore alternative distance metrics beyond Hamming distance to better capture relationships in mixed-type data. Employing metrics such as Gower distance for mixed data types, Euclidean distance for continuous variables, or modular distance for cyclic-categorical features could potentially reveal subtle patterns not captured by the current approach \cite{shraddha_pandit_comparative_2011}.
+
+\vspace{\baselineskip}
+These alternative distance measures would enable the use of different clustering algorithms such as K-prototypes and K-medoids, which may provide complementary perspectives on profile representativeness. Additionally, investigating how different types of similarity relationships influence profile impact could refine our understanding of which accident patterns serve as stronger indicators for related cases.
+
+\vspace{\baselineskip}
+The most promising future works would involve applying our method to new datasets (such as those from other geographical regions) or different domains(eg. occupational health accidents). Our method is incredibly versatile and could be adeptly applied to a variety of problems
+
+
+
+\endgroup
+
+
+
+
+
+\newpage
+
+\addcontentsline{toc}{section}{References}
+\printbibliography
+
+
+\newpage
+
+
+
+
+\appendix
+
+\section{Exhaustive Enumeration of Alternative Methods}
+
+Over the course of nine months, we systematically explored numerous clustering-based profiling approaches. This appendix provides a comprehensive enumeration of all major methodological variants tested, along with their parameter ranges and outcomes.
+
+\subsection{Method Categories}
+
+\begin{longtable}{p{0.8cm}p{3.5cm}p{6cm}p{4cm}}
+\caption{Comprehensive enumeration of alternative clustering methods}
+\label{tab:exhaustive_methods}\\
+\hline
+\textbf{ID} & \textbf{Method Name} & \textbf{Scoring Function} & \textbf{Parameters Tested} \\
+\hline
+\endfirsthead
+\multicolumn{4}{c}%
+{{\tablename\ \thetable{} -- continued from previous page}} \\
+\hline
+\textbf{ID} & \textbf{Method Name} & \textbf{Scoring Function} & \textbf{Parameters Tested} \\
+\hline
+\endhead
+\hline
+\multicolumn{4}{r}{{\small\textit{Continued on next page}}}\\
+\endfoot
+\hline
+\endlastfoot
+
+\multicolumn{4}{l}{\textbf{Phase 1: Basic Cluster Size Optimization}} \\
+\hline
+
+M1 & Initial Scoring Method (Yunes's Method) & $\text{Score} = \sum (\|C_m\| \cdot \text{Adequacy}(m))$ &
+\begin{tabular}[t]{@{}l@{}}
+Value Adequacy: 75\% \\
+Profile Adequacy: 4 \\
+K Range: [5, 25] \\
+Var Range: [4, 9]
+\end{tabular} \\
+
+M2 & Yunes v2: Variable Threshold & $\text{Score} = \sum (\|C_m\| \cdot \text{Adequacy}(m))$ &
+\begin{tabular}[t]{@{}l@{}}
+Value Adequacy: [60, 95] \\
+Profile Adequacy: 4 \\
+K Range: [5, 25] \\
+Var Range: [4, 9]
+\end{tabular} \\
+
+M3 & Yunes v3: Variable Profile Size & $\text{Score} = \sum (\|C_m\| \cdot \text{Adequacy}(m))$ &
+\begin{tabular}[t]{@{}l@{}}
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [5, 25] \\
+Var Range: [4, 9]
+\end{tabular} \\
+
+\hline
+\multicolumn{4}{l}{\textbf{Phase 2: Profile Precision Integration}} \\
+\hline
+
+M4 & Profile Precision Basic & $\text{Score} = \sum (\|C_m\| \cdot PS_m \cdot \text{Adequacy}(m))$ &
+\begin{tabular}[t]{@{}l@{}}
+Value Adequacy: 70\% \\
+Profile Adequacy: 5 \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M5 & Linear Weighted (balanced) & $\text{Score} = \sum ((0.5 \cdot \|C_m\| + 0.5 \cdot PS_m) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M6 & Linear Weighted (parametric) & $\text{Score} = \sum ((p \cdot \|C_m\| + (1-p) \cdot PS_m) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+$p \in \{0, 0.1, 0.2, \ldots, 1.0\}$ \\
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M7 & Geometric Mean (balanced) & $\text{Score} = \sum ((\|C_m\|^{0.5} \cdot PS_m^{0.5}) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M8 & Geometric Mean (parametric) & $\text{Score} = \sum ((\|C_m\|^p \cdot PS_m^{(1-p)}) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+$p \in \{0, 0.1, 0.2, \ldots, 1.0\}$ \\
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+\hline
+\multicolumn{4}{l}{\textbf{Phase 3: Profile Length Integration}} \\
+\hline
+
+M9 & Linear + Length (additive) & $\text{Score} = \sum ((p \cdot \|C_m\| + (1-p) \cdot PS_m + \|\text{Profile}_m\|) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+$p \in \{0, 0.1, 0.2, \ldots, 1.0\}$ \\
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M10 & Geometric + Length (multiplicative) & $\text{Score} = \sum ((\|C_m\|^p \cdot PS_m^{(1-p)} \cdot \|\text{Profile}_m\|) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+$p \in \{0, 0.1, 0.2, \ldots, 1.0\}$ \\
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M11 & Weighted Length (parametric) & $\text{Score} = \sum ((p \cdot \|C_m\| + (1-p) \cdot PS_m + q \cdot \|\text{Profile}_m\|) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+$p \in [0, 1], q \in [0, 5]$ \\
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+M12 & Fully Parametric Geometric & $\text{Score} = \sum ((\|C_m\|^p \cdot PS_m^{q} \cdot \|\text{Profile}_m\|^r) \cdot \text{Adequacy}(C_m))$ &
+\begin{tabular}[t]{@{}l@{}}
+$p, q, r \in \{0, 0.25, 0.5, 0.75, 1.0\}$ \\
+Value Adequacy: [60, 95] \\
+Profile Adequacy: [4, 6] \\
+K Range: [10, 20] \\
+Var Range: [5, 9]
+\end{tabular} \\
+
+\end{longtable}
+
+\subsection{Summary Statistics of Exploration}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total distinct method variants tested & 12 major + variants \\
+Total clustering runs executed & $>$ 800 \\
+Parameter combinations explored & $>$ 1,200 \\
+Value Adequacy thresholds tested & 60\%, 65\%, 70\%, 75\%, 80\%, 85\%, 90\%, 95\% \\
+Profile Adequacy values tested & 4, 5, 6 \\
+K Range values tested & [5,15], [10,20], [5,25], [15,30] \\
+Variable Range combinations & [4,6], [4,9], [5,9], [6,9] \\
+Linear weight parameter ($p$) values & 11 values (0.0, 0.1, ..., 1.0) \\
+Computational time invested & $>$ 120 hours \\
+Research duration & 9 months \\
+\bottomrule
+\end{tabular}
+\caption{Summary statistics of methodological exploration}
+\label{tab:exploration_summary}
+\end{table}
+
+\subsection{Key Findings Across Methods}
+
+All methods M1--M12 shared a common limitation: they optimized cluster-level statistics (size, internal precision, profile completeness) rather than directly measuring global profile frequency. Consequently:
+
+\begin{itemize}
+    \item High-scoring clusterings frequently missed profiles with the highest raw frequency counts
+    \item Correlation between cluster score and frequency-based profile ranking remained low ($r < 0.4$) across all variants
+    \item Adjusting weights between cluster size and profile precision (M6, M8) provided marginal improvements but did not resolve the fundamental misalignment
+    \item Incorporating profile length (M9--M12) similarly failed to improve frequency alignment
+    \item Performance degradation was consistent across different threshold and K-range configurations
+\end{itemize}
+
+These systematic failures across hundreds of experiments led to the development of the direct profile-counting methodology presented in Section \ref{sec:Method}, which abandons cluster-level optimization in favor of explicit global frequency measurement.
+
+\begin{longtable}{p{0.7cm}p{6.5cm}rrrrp{1.5cm}p{1cm}r}
+\caption{Comprehensive comparison of all clustering methods with qualifying profiles}
+\label{tab:method_comparison}\\
+\hline
+\textbf{Run} & \textbf{Method} & \textbf{Score} & \textbf{\#P} & \textbf{Rank} & \textbf{Cov.\%} & \textbf{K} & \textbf{ValT} & \textbf{GT} \\
+\hline
+\endfirsthead
+\multicolumn{9}{c}%
+{{\tablename\ \thetable{} -- continued from previous page}} \\
+\hline
+\textbf{Run} & \textbf{Method} & \textbf{Score} & \textbf{\#P} & \textbf{Rank} & \textbf{Cov.\%} & \textbf{K} & \textbf{ValT} & \textbf{GT} \\
+\hline
+\endhead
+\hline
+\multicolumn{9}{r}{{\small\textit{Continued on next page}}}\\
+\endfoot
+\hline
+\endlastfoot
+53 & (decreasing) value adequacy threshold to 60 & 0.020 & 12 & 87 & 40.0 & 15-20 & 60\% & 3017 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [87: 1055] 2, H, Tarda, small \par
+\hspace{1em} [319: 496] 2, D, Matí \par
+\hspace{1em} [734: 300] 1, H, Matí, Moto \par
+\hspace{1em} [841: 276] 2, D, Moto, Tarda \par
+\hspace{1em} [1124: 224] 2, Dijous, H, Moto \par
+\hspace{1em} [1892: 154] Divendres, H, Moto, Tarda \par
+\hspace{1em} [1945: 151] 2, Dimecres, H, Moto, Tarda \par
+\hspace{1em} [2007: 146] 2, Divendres, H, Matí, small \par
+\hspace{1em} [2610: 119] 2, Dimarts, H, Matí, small \par
+\hspace{1em} [3999: 84] 2, D, Dimecres, small \par
+\hspace{1em} [28091: 10] 1, D, Dilluns, Tarda, small \par
+\hspace{1em} [62721: 2] 1, Dijous, H, PMV, Tarda \par} \\
+\hline
+54 & (increasing) value adequacy threshold to 90 & 0.003 & 4 & 51 & 31.3 & 15-20 & 90\% & 2365 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [51: 1332] 2, H, Summer \par
+\hspace{1em} [279: 545] 2, H, Tarda, Winter \par
+\hspace{1em} [416: 435] 1, H, Nit \par
+\hspace{1em} [6688: 53] 16-25, H, Matí, Winter \par} \\
+\hline
+55 & (increasing) cluster\_adequacy\_threshold to 5 variables & 0.008 & 16 & 42 & 102.4 & 15-20 & 75\% & 7728 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [42: 1416] 2, H, Matí \par
+\hspace{1em} [124: 872] 1, H, Matí \par
+\hspace{1em} [132: 835] 1, H, small \par
+\hspace{1em} [151: 777] H, Moto, Spring \par
+\hspace{1em} [185: 690] 2, H, Summer, Tarda \par
+\hspace{1em} [260: 568] 2, D, small \par
+\hspace{1em} [380: 456] H, Summer, Tarda, small \par
+\hspace{1em} [493: 390] 2, H, Spring, Tarda, small \par
+\hspace{1em} [841: 276] 2, D, Moto, Tarda \par
+\hspace{1em} [847: 275] 2, H, Tarda, Winter, small \par
+\hspace{1em} [947: 256] 2, H, Matí, Summer, small \par
+\hspace{1em} [1115: 225] 2, Dissabte-Diumenge, H, Moto \par
+\hspace{1em} [1223: 212] H, PMV, Spring \par
+\hspace{1em} [1465: 185] 2, H, Matí, Moto, Spring \par
+\hspace{1em} [1570: 176] 1, H, Matí, Spring, small \par
+\hspace{1em} [2610: 119] 2, Dimarts, H, Matí, small \par} \\
+\hline
+56 & (decreasing) range of (k)\#clusters to be 10-15 clusters & 0.016 & 10 & 87 & 72.6 & 10-15 & 75\% & 5475 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [87: 1055] 2, H, Tarda, small \par
+\hspace{1em} [89: 1037] 2, Moto, Tarda \par
+\hspace{1em} [124: 872] 1, H, Matí \par
+\hspace{1em} [169: 717] 2, H, Matí, small \par
+\hspace{1em} [260: 568] 2, D, small \par
+\hspace{1em} [790: 288] 2, D, frontal/fronto-lateral collision \par
+\hspace{1em} [853: 274] 1, Matí, bumper-bumper, small \par
+\hspace{1em} [894: 264] 2, H, Moto, frontal/fronto-lateral collision \par
+\hspace{1em} [994: 244] 2, H, Matí, lateral collision, small \par
+\hspace{1em} [1845: 156] H, PMV, Tarda, frontal/fronto-lateral collision \par} \\
+\hline
+57 & (increasing) range of (k) \#clusters to 20-25 & 0.021 & 13 & 734 & 20.4 & 20-25 & 60\% & 1540 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [734: 300] 1, H, Matí, Moto \par
+\hspace{1em} [841: 276] 2, D, Moto, Tarda \par
+\hspace{1em} [1124: 224] 2, Dijous, H, Moto \par
+\hspace{1em} [1892: 154] Divendres, H, Moto, Tarda \par
+\hspace{1em} [1945: 151] 2, Dimecres, H, Moto, Tarda \par
+\hspace{1em} [2007: 146] 2, Divendres, H, Matí, small \par
+\hspace{1em} [2610: 119] 2, Dimarts, H, Matí, small \par
+\hspace{1em} [3999: 84] 2, D, Dimecres, small \par
+\hspace{1em} [10022: 36] 2, Dimecres, H, Matí, PMV \par
+\hspace{1em} [10221: 35] 1, Dissabte-Diumenge, H, Moto, Tarda \par
+\hspace{1em} [28091: 10] 1, D, Dilluns, Tarda, small \par
+\hspace{1em} [59896: 3] 2, Divendres, H, Tarda, off-road \par
+\hspace{1em} [62721: 2] 1, Dijous, H, PMV, Tarda \par} \\
+\hline
+58 & (decreased) number variables 4-5 & 0.023 & 4 & 142 & 11.5 & 15-20 & 60\% & 868 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [142: 804] 2, H, Spring, Tarda \par
+\hspace{1em} [5983: 59] 1, H, Tarda, Winter \par
+\hspace{1em} [48710: 4] 3-4-5-6, H, Matí, Spring \par
+\hspace{1em} [87218: 1] 0, D, Matí, Summer \par} \\
+\hline
+59 & range of number of variables 4-10 & 0.023 & 4 & 142 & 11.5 & 15-20 & 60\% & 868 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [142: 804] 2, H, Spring, Tarda \par
+\hspace{1em} [5983: 59] 1, H, Tarda, Winter \par
+\hspace{1em} [48710: 4] 3-4-5-6, H, Matí, Spring \par
+\hspace{1em} [87218: 1] 0, D, Matí, Summer \par} \\
+\hline
+60 & 4-10 variables \& new scoring \& street\_type\_binned & 1.852 & 11 & 72 & 61.5 & 15-20 & 75\% \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [72: 2017] 2, H, Residential, Tarda \par
+\hspace{1em} [170: 1355] 1, H, Matí \par
+\hspace{1em} [333: 926] 2, Fall, H, Tarda \par
+\hspace{1em} [470: 760] 2, D, Matí \par
+\hspace{1em} [698: 595] 1, Fall, H \par
+\hspace{1em} [785: 564] 2, H, Matí, Summer \par
+\hspace{1em} [842: 540] Fall, H, Matí, Residential \par
+\hspace{1em} [1118: 449] 1, H, Nit, Residential \par
+\hspace{1em} [1398: 389] 1, H, Matí, Spring \par
+\hspace{1em} [3382: 215] D, Residential, Tarda, Winter \par
+\hspace{1em} [5934: 143] 2, D, Fall, Residential, Tarda \par} \\
+\hline
+61 & Cluster adequacy of 3 or more variables & 2.320 & 8 & 125 & 44.2 & 15-20 & 75\% & 5713 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [125: 1540] Car, H, Matí \par
+\hspace{1em} [128: 1525] 2, Car, H, Tarda \par
+\hspace{1em} [170: 1355] 1, H, Matí \par
+\hspace{1em} [961: 494] 2, D, Motorcycle, Tarda \par
+\hspace{1em} [1454: 382] 1, Car, H, Nit \par
+\hspace{1em} [4049: 190] 1, Car, D, Matí \par
+\hspace{1em} [5644: 149] 2, H, Motorcycle, Nit \par
+\hspace{1em} [12552: 78] 2, Unknown \par} \\
+\hline
+62 & Cluster adequacy of 5 or more variables & 0.822 & 19 & 19 & 196.7 & 15-20 & 75\% & 25434 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [19: 3478] 2, H, Tarda \par
+\hspace{1em} [19: 3478] 2, H, Tarda \par
+\hspace{1em} [38: 2655] 2, Car, H \par
+\hspace{1em} [42: 2508] 1, H \par
+\hspace{1em} [49: 2345] 2, H, Matí \par
+\hspace{1em} [62: 2171] 2, Car, Residential \par
+\hspace{1em} [70: 2034] 2, Motorcycle, Residential \par
+\hspace{1em} [139: 1473] 1, H, Residential \par
+\hspace{1em} [330: 928] 2, Car, H, Matí \par
+\hspace{1em} [393: 844] 2, Car, H, Residential, Tarda \par
+\hspace{1em} [408: 830] 2, H, Motorcycle, Residential, Tarda \par
+\hspace{1em} [889: 521] 2, Car, D, Tarda \par
+\hspace{1em} [961: 494] 2, D, Motorcycle, Tarda \par
+\hspace{1em} [1768: 336] 2, H, Motorcycle, Residential, Summer \par
+\hspace{1em} [2006: 308] 1, Car, H, Matí, Residential \par
+\hspace{1em} [2043: 304] 2, Car, D, Residential, Tarda \par
+\hspace{1em} [2106: 298] 2, H, Large Vehicles, Matí, Residential \par
+\hspace{1em} [3099: 228] 2, H, Matí, Motorcycle, Spring \par
+\hspace{1em} [3756: 201] 3-4-5-6, Car, H, Tarda \par} \\
+\hline
+63 & 10 to 15 clusters & 1.852 & 11 & 72 & 61.5 & 10-15 & 75\% & 7953 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [72: 2017] 2, H, Residential, Tarda \par
+\hspace{1em} [170: 1355] 1, H, Matí \par
+\hspace{1em} [333: 926] 2, Fall, H, Tarda \par
+\hspace{1em} [470: 760] 2, D, Matí \par
+\hspace{1em} [698: 595] 1, Fall, H \par
+\hspace{1em} [785: 564] 2, H, Matí, Summer \par
+\hspace{1em} [842: 540] Fall, H, Matí, Residential \par
+\hspace{1em} [1118: 449] 1, H, Nit, Residential \par
+\hspace{1em} [1398: 389] 1, H, Matí, Spring \par
+\hspace{1em} [3382: 215] D, Residential, Tarda, Winter \par
+\hspace{1em} [5934: 143] 2, D, Fall, Residential, Tarda \par} \\
+\hline
+64 & 20 to 25 clusters & 1.852 & 11 & 72 & 61.5 & 20-25 & 75\% & 7953 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [72: 2017] 2, H, Residential, Tarda \par
+\hspace{1em} [170: 1355] 1, H, Matí \par
+\hspace{1em} [333: 926] 2, Fall, H, Tarda \par
+\hspace{1em} [470: 760] 2, D, Matí \par
+\hspace{1em} [698: 595] 1, Fall, H \par
+\hspace{1em} [785: 564] 2, H, Matí, Summer \par
+\hspace{1em} [842: 540] Fall, H, Matí, Residential \par
+\hspace{1em} [1118: 449] 1, H, Nit, Residential \par
+\hspace{1em} [1398: 389] 1, H, Matí, Spring \par
+\hspace{1em} [3382: 215] D, Residential, Tarda, Winter \par
+\hspace{1em} [5934: 143] 2, D, Fall, Residential, Tarda \par} \\
+\hline
+65 & 10 to 15 clusters + value adequacy threshold of 60 & 1.971 & 5 & 128 & 12.1 & 10-15 & 60\% & 1566 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [128: 1525] 2, Car, H, Tarda \par
+\hspace{1em} [60636: 17] 2, Car, Matí, Unknown \par
+\hspace{1em} [74020: 13] 3-4-5-6, Car, H, Matí \par
+\hspace{1em} [92601: 10] 0, Car, H, Nit \par
+\hspace{1em} [266131: 1] 1, Car, Tarda, Unknown \par} \\
+\hline
+66 & 15 to 20 clusters + value adequacy threshold of 60 & 1.971 & 5 & 128 & 12.1 & 15-20 & 60\% & 1566 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [128: 1525] 2, Car, H, Tarda \par
+\hspace{1em} [60636: 17] 2, Car, Matí, Unknown \par
+\hspace{1em} [74020: 13] 3-4-5-6, Car, H, Matí \par
+\hspace{1em} [92601: 10] 0, Car, H, Nit \par
+\hspace{1em} [266131: 1] 1, Car, Tarda, Unknown \par} \\
+\hline
+67 & 10 to 20 clusters + value adequacy threshold of 60 & 1.971 & 5 & 128 & 12.1 & 10-20 & 60\% & 1566 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [128: 1525] 2, Car, H, Tarda \par
+\hspace{1em} [60636: 17] 2, Car, Matí, Unknown \par
+\hspace{1em} [74020: 13] 3-4-5-6, Car, H, Matí \par
+\hspace{1em} [92601: 10] 0, Car, H, Nit \par
+\hspace{1em} [266131: 1] 1, Car, Tarda, Unknown \par} \\
+\hline
+68 & 10 to 15 clusters + value adequacy threshold of 90 & 0.979 & 0 & -- & -- & 10-15 & 90\% & 0 \\
+\hline
+69 & 15 to 20 clusters + value adequacy threshold of 90 & 0.979 & 0 & -- & -- & 15-20 & 90\% & 0 \\
+\hline
+70 & 20 to 25 clusters + value adequacy threshold of 90 & 0.979 & 0 & -- & -- & 20-25 & 90\% & 0 \\
+\hline
+71 & 70\% adequacy thresh, 50\% \& 4+ variable cluster adequacy thresh, 7-10 variables & 1.485 & 8 & 129 & 41.8 & 15-20 & 70\% \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [129: 1525] 2, Car, H, Tarda \par
+\hspace{1em} [164: 1370] 2, H, Motorcycle, Tarda \par
+\hspace{1em} [333: 928] 2, Car, H, Matí \par
+\hspace{1em} [832: 538] 2, H, Large Vehicles, Matí \par
+\hspace{1em} [949: 494] 2, D, Motorcycle, Tarda \par
+\hspace{1em} [972: 487] 1, H, Matí, Motorcycle \par
+\hspace{1em} [2545: 260] 2, Bumper-bumper, H, Matí, Motorcycle \par
+\hspace{1em} [5834: 145] 2, Bumper-bumper, Car, D, Matí \par} \\
+\hline
+72 & Change traffic\_density & 0.760 & 19 & 13 & 153.3 & 15-20 & 70\% & 21066 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [13: 3951] H, Matí \par
+\hspace{1em} [45: 2339] H, Tarda, residential \par
+\hspace{1em} [67: 1941] Car, H, Tarda \par
+\hspace{1em} [72: 1855] H, Matí, residential \par
+\hspace{1em} [77: 1748] H, Motorcycle, Tarda \par
+\hspace{1em} [81: 1700] 2, H, Matí \par
+\hspace{1em} [103: 1540] Car, H, Matí \par
+\hspace{1em} [179: 1157] 2, H, Tarda, residential \par
+\hspace{1em} [399: 737] Car, Tarda, Winter \par
+\hspace{1em} [485: 669] 2, Car, H, Matí \par
+\hspace{1em} [520: 648] 0, H, Tarda, residential \par
+\hspace{1em} [521: 647] 0, Car, H, residential \par
+\hspace{1em} [637: 576] 2, Fall, H, Tarda \par
+\hspace{1em} [1079: 423] H, Motorcycle, Summer, residential \par
+\hspace{1em} [1124: 409] Car, H, Matí, Spring \par
+\hspace{1em} [1871: 293] 0, H, Spring, Tarda \par
+\hspace{1em} [3183: 207] 2, H, Motorcycle, Tarda, Winter \par
+\hspace{1em} [5534: 140] 0, H, Matí, Spring, residential \par
+\hspace{1em} [10395: 86] 0, Car, D, Matí, residential \par} \\
+\hline
+73 & Including district, excluding density & 0.469 & 19 & 6 & 169.7 & 15-20 & 70\% & 23316 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [6: 4824] H, residential \par
+\hspace{1em} [10: 3951] H, Matí \par
+\hspace{1em} [56: 1941] Car, H, Tarda \par
+\hspace{1em} [56: 1941] Car, H, Tarda \par
+\hspace{1em} [59: 1855] H, Matí, residential \par
+\hspace{1em} [65: 1748] H, Motorcycle, Tarda \par
+\hspace{1em} [85: 1540] Car, H, Matí \par
+\hspace{1em} [114: 1373] H, Matí, Motorcycle \par
+\hspace{1em} [253: 886] H, Motorcycle, Tarda, residential \par
+\hspace{1em} [540: 566] Bumper-bumper, Car, H, Matí \par
+\hspace{1em} [547: 560] Frontal/fronto-lateral collision, H, Tarda, residential \par
+\hspace{1em} [663: 500] Eixample, H, Motorcycle, Tarda \par
+\hspace{1em} [1442: 309] Car, H, Nit, residential \par
+\hspace{1em} [1509: 300] D, Motorcycle, Tarda, residential \par
+\hspace{1em} [1751: 271] Car, H, Matí, secondary \par
+\hspace{1em} [1877: 260] D, Matí, Motorcycle, residential \par
+\hspace{1em} [2410: 221] Bumper-bumper, H, Tarda, secondary \par
+\hspace{1em} [3105: 186] Bumper-bumper, H, Matí, Motorcycle, residential \par
+\hspace{1em} [9149: 84] Dissabte-Diumenge, H, Matí, Other \par} \\
+\hline
+74 & updated 'Near\_holiday' variable & 1.688 & 19 & 131 & 157.1 & 15-20 & 70\% & 6026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [131: 1789] 0, Car, H, Tarda \par
+\hspace{1em} [270: 1262] 0, H, Matí, Motorcycle \par
+\hspace{1em} [160: 1600] 0, H, Matí, residential \par
+\hspace{1em} [1181: 559] 0, D, Motorcycle, Tarda \par
+\hspace{1em} [156: 1617] 0, H, Motorcycle, residential \par
+\hspace{1em} [1431: 495] 0, Car, D, Matí \par
+\hspace{1em} [161: 1594] 0, H, Motorcycle, Tarda \par
+\hspace{1em} [1314: 523] 0, Car, H, Nit \par
+\hspace{1em} [2126: 393] 0, Bumper-bumper, H, Matí, Motorcycle \par
+\hspace{1em} [217: 1387] 0, Car, H, Matí \par
+\hspace{1em} [99: 2027] 0, H, Tarda, residential \par
+\hspace{1em} [131: 1789] 0, Car, H, Tarda \par
+\hspace{1em} [999: 615] 0, Car, D, Tarda \par
+\hspace{1em} [1797: 435] 0, Bumper-bumper, H, Motorcycle, Tarda \par
+\hspace{1em} [1364: 510] 0, Bumper-bumper, Car, H, Matí \par
+\hspace{1em} [3808: 270] 0, Car, H, Nit, residential \par
+\hspace{1em} [217: 1387] 0, Car, H, Matí \par
+\hspace{1em} [161: 1594] 0, H, Motorcycle, Tarda \par
+\hspace{1em} [1598: 465] 0, H, Lateral collision, Motorcycle, Tarda \par} \\
+\hline
+76 & rename variants & 1.804 & 5 & 193 & 19.9 & 15-20 & 70\% & 2567 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [193: 1378] Car, H, Tarda, Workday \par
+\hspace{1em} [368: 984] D, Motorcycle, Workday \par
+\hspace{1em} [9461: 141] Car, D, Tarda, Weekend \par
+\hspace{1em} [32954: 55] Matí, Unknown, Workday \par
+\hspace{1em} [209265: 9] Motorcycle, Tarda, Unknown, Workday \par} \\
+\hline
+77 & 5 variable run - for adjacent profiles computation & 1.868 & 16 & 145 & 56.2 & 15-20 & 70\% & 7270 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [145: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [193: 1378] Car, H, Tarda, Workday \par
+\hspace{1em} [399: 950] Fall, H, Matí \par
+\hspace{1em} [865: 630] H, Matí, Summer, Workday \par
+\hspace{1em} [965: 590] Fall, H, Motorcycle, Workday \par
+\hspace{1em} [1597: 439] H, Motorcycle, Tarda, Winter \par
+\hspace{1em} [2971: 302] Car, H, Matí, Winter, Workday \par
+\hspace{1em} [2969: 302] H, Motorcycle, Summer, Tarda, Workday \par
+\hspace{1em} [3170: 290] Car, D, Summer \par
+\hspace{1em} [5028: 216] D, Fall, Tarda, Workday \par
+\hspace{1em} [8679: 150] Car, D, Matí, Spring \par
+\hspace{1em} [9477: 141] D, Motorcycle, Spring, Tarda, Workday \par
+\hspace{1em} [9868: 137] Car, D, Tarda, Winter, Workday \par
+\hspace{1em} [16499: 94] Car, Fall, H, Tarda, Weekend \par
+\hspace{1em} [29044: 61] H, Large Vehicles, Tarda, holiday \par
+\hspace{1em} [198434: 9] Fall, Tarda, Unknown, Workday \par} \\
+\hline
+78 & 5 variable run - adequate cluster defined by 5+ vars and removed cluster\_size - for adjacent profiles computation & 0.139 & 14 & 766 & 30.5 & 15-20 & 70\% & 3938 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [816: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [915: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [1210: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1902: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [6033: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [6183: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [6359: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [8980: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [11125: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [14619: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [22816: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [30481: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par
+\hspace{1em} [77479: 26] Fairly\_dense\_traffic, Matí, Unknown, Workday \par} \\
+\hline
+80 & 0.2\_cluster\_percent + 0.8\_profile\_percent & 86.377 & 13 & 106 & 67.0 & 15-20 & 70\% & 8658 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [106: 1874] Matí, Workday, residential \par
+\hspace{1em} [152: 1540] Car, H, Matí \par
+\hspace{1em} [346: 1014] D, Workday, residential \par
+\hspace{1em} [562: 802] H, Tarda, Weekend \par
+\hspace{1em} [765: 670] Car, H, Tarda, Workday, residential \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [806: 651] H, Matí, Motorcycle, residential \par
+\hspace{1em} [1586: 441] D, Matí, Motorcycle, Workday \par
+\hspace{1em} [2942: 305] H, Motorcycle, Tarda, secondary \par
+\hspace{1em} [5836: 195] Car, H, Nit, Weekend \par
+\hspace{1em} [5907: 194] Motorcycle, Tarda, Workday, utility. \par
+\hspace{1em} [6157: 189] Car, H, Matí, Workday, secondary \par
+\hspace{1em} [12740: 113] H, Motorcycle, Tarda, Workday, pedestrian \par} \\
+\hline
+82 & (CP + PP) * A normalized + 5 vars & 47.485 & 14 & 745 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [745: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [796: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [893: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [1182: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1857: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [5825: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [5961: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [6122: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [8705: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [10768: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [12189: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [14193: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [22327: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [29209: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+83 & (CP + PP) * A normalized + 6 vars & 48.311 & 19 & 216 & 57.3 & 18-20 & 70\% & 7404 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [216: 1302] H, Motorcycle, Tarda, Workday \par
+\hspace{1em} [513: 838] Fairly\_dense\_traffic, Matí, Workday, residential \par
+\hspace{1em} [745: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [785: 651] H, Matí, Motorcycle, residential \par
+\hspace{1em} [796: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1257: 498] Fairly\_dense\_traffic, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [1541: 441] D, Matí, Motorcycle, Workday \par
+\hspace{1em} [1546: 440] Car, H, Matí, Sparse\_traffic \par
+\hspace{1em} [2063: 373] H, Motorcycle, Sparse\_traffic, Workday, residential \par
+\hspace{1em} [2514: 330] Car, H, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [3744: 255] D, Motorcycle, Tarda, Workday, residential \par
+\hspace{1em} [4836: 216] H, Sparse\_traffic, Tarda, Weekend \par
+\hspace{1em} [5270: 205] Car, Matí, Sparse\_traffic, Workday, residential \par
+\hspace{1em} [9401: 138] Fairly\_dense\_traffic, H, Motorcycle, Tarda, Weekend \par
+\hspace{1em} [10326: 128] Car, Fairly\_sparse\_traffic, H, Matí, Workday \par
+\hspace{1em} [13324: 107] Car, Fairly\_dense\_traffic, H, Matí, Weekend \par
+\hspace{1em} [20952: 76] Car, Fairly\_sparse\_traffic, H, Nit, Weekend \par
+\hspace{1em} [29184: 58] Car, D, Sparse\_traffic, Tarda, Workday, residential \par
+\hspace{1em} [61705: 31] Fairly\_dense\_traffic, H, Large Vehicles, Workday, living\_street \par} \\
+\hline
+84 & (CP + PP) * A normalized + 7 vars & 38.406 & 20 & 34 & 102.5 & 18-20 & 70\% & 13253 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [34: 2885] H, Matí, Workday \par
+\hspace{1em} [216: 1302] H, Motorcycle, Tarda, Workday \par
+\hspace{1em} [287: 1104] Car, H, Matí, Workday \par
+\hspace{1em} [293: 1094] H, Matí, Motorcycle, Workday \par
+\hspace{1em} [556: 802] Dissabte-Diumenge, H, Tarda, Weekend \par
+\hspace{1em} [590: 771] Car, H, Sparse\_traffic, Workday \par
+\hspace{1em} [618: 746] Dissabte-Diumenge, Matí, Weekend \par
+\hspace{1em} [748: 669] Car, Fairly\_dense\_traffic, H, Matí \par
+\hspace{1em} [796: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1252: 499] D, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1257: 498] Fairly\_dense\_traffic, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [1385: 474] Car, D, Tarda, Workday \par
+\hspace{1em} [1782: 410] Car, D, Matí, Workday \par
+\hspace{1em} [2144: 364] Dissabte-Diumenge, Fairly\_dense\_traffic, H, Tarda, Weekend \par
+\hspace{1em} [3477: 268] Dimecres, Fairly\_dense\_traffic, H, Motorcycle, Workday \par
+\hspace{1em} [5653: 195] Car, Dissabte-Diumenge, H, Nit, Weekend \par
+\hspace{1em} [7872: 156] Dimarts, H, Motorcycle, Tarda, Workday, residential \par
+\hspace{1em} [8215: 152] Car, Dimarts, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [10768: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [16219: 92] Motorcycle, Nit, Sparse\_traffic, Workday, residential \par} \\
+\hline
+85 & (CP + PP) * A normalized + 5-7 vars & 49.912 & 14 & 745 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [745: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [796: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [893: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [1182: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1857: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [5825: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [5961: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [6122: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [8705: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [10768: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [12189: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [14193: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [22327: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [29209: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+86 & (CP + PP) * A normalized + 6 vars + drop street\_type & 58.487 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+87 & CP * PP * A normalized + 6 vars + drop street\_type & 66.074 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+88 & CP * A normalized + 6 vars + drop street\_type & 64.171 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+89 & -log(1.01-(CP|->[0,1])) * CA - 6 vars & 0.833 & 17 & 123 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1121: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [3821: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+90 & (CP + PP) * A normalized + 5 vars + GT-exact-match-scoring & 54.029 & 14 & 582 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [687: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [911: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [4152: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [4331: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [6050: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8218: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [9584: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [14497: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [18600: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+91 & (CP + PP) * A normalized + 6 vars + GT-exact-match-scoring & 58.487 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+92 & (CP + PP) * A normalized + 7 vars + GT-exact-match-scoring & 39.603 & 20 & 103 & 98.6 & 18-20 & 70\% & 12750 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [103: 1707] Dissabte-Diumenge, H, Weekend \par
+\hspace{1em} [177: 1302] H, Motorcycle, Tarda, Workday \par
+\hspace{1em} [181: 1291] Fairly\_dense\_traffic, H, Matí, Workday \par
+\hspace{1em} [228: 1104] Car, H, Matí, Workday \par
+\hspace{1em} [231: 1094] H, Matí, Motorcycle, Workday \par
+\hspace{1em} [352: 889] Car, Dissabte-Diumenge, H, Weekend \par
+\hspace{1em} [356: 888] Fairly\_dense\_traffic, H, Motorcycle, Tarda \par
+\hspace{1em} [533: 699] Fairly\_dense\_traffic, Matí, Motorcycle, Workday \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [994: 489] H, Sparse\_traffic, Spring, Workday \par
+\hspace{1em} [1058: 474] Car, D, Tarda, Workday \par
+\hspace{1em} [1340: 410] Car, D, Matí, Workday \par
+\hspace{1em} [1806: 337] Car, Fall, H, Tarda, Workday \par
+\hspace{1em} [1843: 333] Car, Dissabte-Diumenge, H, Sparse\_traffic \par
+\hspace{1em} [1907: 325] Car, H, Matí, Spring, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [5388: 159] Car, H, Nit, Sparse\_traffic, Workday \par
+\hspace{1em} [5773: 151] Fairly\_dense\_traffic, H, Matí, Motorcycle, Spring, Workday \par
+\hspace{1em} [8113: 116] Motorcycle, Sparse\_traffic, Spring, Tarda, Workday \par
+\hspace{1em} [9732: 100] Fairly\_dense\_traffic, Large Vehicles, Tarda, Winter, Workday \par} \\
+\hline
+93 & (CP + PP) * A normalized + 5-7 vars + GT-exact-match-scoring & 56.682 & 14 & 582 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [687: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [911: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [4152: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [4331: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [6050: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8218: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [9584: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [14497: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [18600: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+94 & CP * PP * A normalized + 6 vars + GT-exact-match-scoring & 66.074 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+95 & CP * A normalized + 6 vars + GT-exact-match-scoring & 24.771 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+96 & PP * A normalized + 6 vars + GT-exact-match-scoring & 33.716 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+97 & -log(1.01-(CP|->[0,1])) * A - 6 & 0.225 & 17 & 123 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1121: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [3821: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+98 & -log(1.01-(CP|->[0,1])) * PP * A - 6 & 0.489 & 17 & 123 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1121: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [3821: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+99 & (-lg(1.01 - (CP/100))) * PP * A - 5-8 variables & 0.339 & 17 & 123 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1121: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [3821: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+100 & -log(1.01-(CP|->[0,1])) * A - 5-7 variables & 0.178 & 17 & 123 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1121: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [3821: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+101 & PP * CP * A - 5-7 variables & 52.859 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+102 & (PP + CP) * A - 5-7 variables & 56.682 & 14 & 582 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [687: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [911: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [4152: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [4331: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [6050: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8218: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [9584: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [14497: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [18600: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+103 & CP * A - 5-7 variables & 21.566 & 19 & 117 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [117: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2280: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8691: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [25755: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+104 & PP * A - 5-7 variables & 38.001 & 14 & 582 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [687: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [911: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [4152: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [4331: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [6050: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [8218: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [9584: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [14497: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [18600: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+105 & CP * A normalized + 4-8 vars + GT-exact-match-scoring & 0.083 & 17 & 123 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [123: 1540] Car, H, Matí \par
+\hspace{1em} [263: 1033] D, Tarda, Workday \par
+\hspace{1em} [582: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [619: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [622: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1121: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1254: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1333: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1387: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [1586: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [1807: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [2354: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [2709: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [3062: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [3821: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [4238: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [7376: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+106 & -log(1.01 – CP/100) * A normalized + 4-8 vars + messing with variables (testing for robustness) + GT-exact-match-scoring & 0.064 & 17 & 152 & 63.6 & 18-20 & 70\% & 8221 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [152: 1540] Car, H, Matí \par
+\hspace{1em} [339: 1033] D, Tarda, Workday \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [814: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [818: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1516: 453] Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [1705: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1818: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1906: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [2177: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [2507: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [3327: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [3850: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [4409: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [5537: 203] Car, Fairly\_sparse\_traffic, H, Nit \par
+\hspace{1em} [6216: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [11127: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+107 & CP * A normalized + 4-8 vars / messed variables (robustness) + GT-exact-match-scoring & 14.130 & 20 & 10 & 92.0 & 18-20 & 70\% & 11896 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [10: 4548] H, residential \par
+\hspace{1em} [219: 1302] H, Motorcycle, Tarda, Workday \par
+\hspace{1em} [683: 707] Car, H, Matí, residential \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [768: 669] Car, Fairly\_dense\_traffic, H, Matí \par
+\hspace{1em} [818: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1288: 498] Fairly\_dense\_traffic, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [1588: 441] D, Matí, Motorcycle, Workday \par
+\hspace{1em} [1906: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [2125: 373] H, Motorcycle, Sparse\_traffic, Workday, residential \par
+\hspace{1em} [3327: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [3890: 255] D, Motorcycle, Tarda, Workday, residential \par
+\hspace{1em} [5817: 196] Car, D, Matí, Workday, residential \par
+\hspace{1em} [5854: 195] Car, H, Nit, Weekend \par
+\hspace{1em} [8787: 149] Fairly\_dense\_traffic, Large Vehicles, Matí, Workday, residential \par
+\hspace{1em} [9775: 138] Fairly\_dense\_traffic, H, Motorcycle, Tarda, Weekend \par
+\hspace{1em} [11127: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [14789: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [15149: 100] Fairly\_dense\_traffic, H, Large Vehicles, Workday, secondary \par
+\hspace{1em} [15495: 99] Car, Fairly\_sparse\_traffic, H, Nit, Workday \par} \\
+\hline
+108 & CP * PP * A normalized + 4-8 vars / messed variables (robustness) + GT-exact-match-scoring & 30.987 & 19 & 145 & 74.2 & 18-20 & 70\% & 9587 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [145: 1581] Matí, Motorcycle, Workday \par
+\hspace{1em} [152: 1540] Car, H, Matí \par
+\hspace{1em} [339: 1033] D, Tarda, Workday \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [814: 648] Fairly\_dense\_traffic, H, Weekend \par
+\hspace{1em} [818: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [1705: 425] Motorcycle, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [1818: 411] Car, H, Tarda, Weekend \par
+\hspace{1em} [1906: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [2177: 367] H, Lateral collision, Motorcycle, Tarda, Workday \par
+\hspace{1em} [2507: 337] Bumper-bumper, H, Matí, Motorcycle, Workday \par
+\hspace{1em} [3212: 288] Car, Fairly\_sparse\_traffic, Nit \par
+\hspace{1em} [3327: 282] Car, H, Matí, Sparse\_traffic, Workday \par
+\hspace{1em} [3850: 256] Fairly\_dense\_traffic, Frontal/fronto-lateral collision, H, Motorcycle, Workday \par
+\hspace{1em} [4409: 235] D, Fairly\_dense\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [6216: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [11127: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [13387: 110] Bumper-bumper, Car, H, Matí, Weekend \par
+\hspace{1em} [44154: 43] Bumper-bumper, Car, D, Sparse\_traffic, Tarda, Workday \par} \\
+\hline
+109 & (-lg(1.01 - (CP/100))) * PP * A - 4-8 variables / messed variables (robustness) + GT-exactness & 0.096 & 18 & 34 & 115.8 & 18-20 & 70\% & 14977 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [34: 2885] H, Matí, Workday \par
+\hspace{1em} [125: 1707] Dissabte-Diumenge, H, Weekend \par
+\hspace{1em} [226: 1291] Fairly\_dense\_traffic, H, Matí, Workday \par
+\hspace{1em} [364: 989] H, Sparse\_traffic, Workday, residential \par
+\hspace{1em} [444: 906] D, Matí, Workday \par
+\hspace{1em} [472: 878] H, Tarda, Winter, Workday \par
+\hspace{1em} [520: 838] Fairly\_dense\_traffic, Matí, Workday, residential \par
+\hspace{1em} [540: 824] H, Matí, Spring, Workday \par
+\hspace{1em} [557: 810] Fairly\_dense\_traffic, H, Tarda, Workday, residential \par
+\hspace{1em} [626: 746] H, Summer, Tarda, Workday \par
+\hspace{1em} [867: 630] H, Matí, Summer, Workday \par
+\hspace{1em} [1041: 565] Dense\_Traffic, H, Tarda, Workday \par
+\hspace{1em} [1207: 516] D, Tarda, Workday, residential \par
+\hspace{1em} [1303: 495] D, Fairly\_dense\_traffic, Tarda, Workday \par
+\hspace{1em} [2213: 364] Dissabte-Diumenge, Fairly\_dense\_traffic, H, Tarda, Weekend \par
+\hspace{1em} [3389: 279] D, Spring, Tarda, Workday \par
+\hspace{1em} [5053: 216] Dissabte-Diumenge, H, Sparse\_traffic, Tarda, Weekend \par
+\hspace{1em} [50890: 38] Fairly\_dense\_traffic, H, Matí, Summer, holiday \par} \\
+\hline
+110 & (CP + PP) * A normalized + 4-8 vars / messed variables (robustness) + GT-exact-match-scoring & 23.462 & 14 & 766 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [818: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [916: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [1212: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1906: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [6025: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [6216: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [6372: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [9024: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [11127: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [12695: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [14789: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [23001: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [30639: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+111 & (CP*0.25 + PP*0.75) * A normalized + 4-8 vars / messed variables (robustness) + GT-exact-match-scoring & 29.256 & 14 & 766 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [818: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [916: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [1212: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1906: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [6025: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [6216: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [6372: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [9024: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [11127: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [12695: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [14789: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [23001: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [30639: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+112 & (CP*0.25 + PP*0.75) * A normalized + 4-8 vars / messed variables (robustness) + GT-exact-match-scoring & 30.717 & 14 & 766 & 31.1 & 18-20 & 70\% & 4026 \\
+\multicolumn{9}{p{14cm}}{\footnotesize \textbf{Profiles:} \par
+\hspace{1em} [766: 670] H, Large Vehicles, Matí, Workday \par
+\hspace{1em} [818: 647] Car, Fairly\_dense\_traffic, H, Tarda, Workday \par
+\hspace{1em} [916: 610] Fairly\_dense\_traffic, H, Matí, Motorcycle \par
+\hspace{1em} [1212: 515] Car, Fairly\_sparse\_traffic, Workday \par
+\hspace{1em} [1906: 400] H, Motorcycle, Sparse\_traffic, Tarda \par
+\hspace{1em} [6025: 192] D, Dense\_Traffic, Tarda, Workday \par
+\hspace{1em} [6216: 189] Car, D, Fairly\_dense\_traffic, Matí, Workday \par
+\hspace{1em} [6372: 185] Fairly\_sparse\_traffic, Motorcycle, Tarda, Workday \par
+\hspace{1em} [9024: 146] D, Matí, Motorcycle, Sparse\_traffic, Workday \par
+\hspace{1em} [11127: 125] H, Large Vehicles, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [12695: 114] Fairly\_dense\_traffic, Matí, Unknown, Workday \par
+\hspace{1em} [14789: 102] Car, D, Sparse\_traffic, Tarda, Workday \par
+\hspace{1em} [23001: 73] Car, H, Nit, Sparse\_traffic, Weekend \par
+\hspace{1em} [30639: 58] Fairly\_dense\_traffic, H, Large Vehicles, holiday \par} \\
+\hline
+115 & reduced threshold & -- & 0 & -- & -- & 18-20 & 70\% & 0 \\
+\hline
+\end{longtable}
+
+
+
+% \section{Appendix: Variable Information \& Histograms}
+
+% \subsection*{Engineered Features for Analysis}
+% The following variables were engineered from the raw dataset to improve model performance by reducing dimensionality, capturing meaningful patterns, and ensuring robust cluster formation.
+
+% \subsubsection*{Day\_shift}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram/Day_shift.png}
+%     \caption{Distribution of accidents across defined day shifts.}
+% \end{figure}
+% \textbf{Justification:} Raw hourly data was binned into categorical shifts (e.g., Morning, Afternoon, Night) to capture distinct traffic patterns corresponding to rush hours, work hours, and late-night periods.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Gender}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram/Gender.png}
+%     \caption{Distribution of individuals involved in accidents by gender.}
+% \end{figure}
+% \textbf{Justification:} This is a fundamental demographic variable retained in its original form to analyze potential gender-based differences in accident profiles.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Accident\_type\_binned}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Accident_type_binned.png}
+%     \caption{Distribution of binned accident types.}
+% \end{figure}
+% \( \text{accident\_type\_binned}(a) = \)
+% $$
+% \begin{cases}
+% \text{Lateral collision} & \text{if } a = \text{"Col.lisió lateral"} \\
+% \text{Bumper-bumper} & \text{if } a \in \{\text{"Abast"}, \text{"Abast multiple"}\} \\
+% \text{Motorcycle fall} & \text{if } a = \text{"Caiguda (dues rodes)"} \\
+% \text{Frontal/fronto-lateral collision} & \text{if } a \in \{\text{"Col.lisió fronto-lateral"}, \text{"Col.lisió frontal"}\} \\
+% \text{Collision with static element} & \text{if } a = \text{"Xoc contra element estàtic"} \\
+% \text{Other} & \text{if } a \in \{\text{"Sortida de via amb bolcada"}, \dots \} \text{ or } a = \text{NaN} \\
+% \text{Unlabelled} & \text{otherwise}
+% \end{cases}
+% $$
+% \textbf{Justification:} Similar accident types were aggregated to reduce the feature's cardinality from over 15 categories to 6. This consolidation prevents data fragmentation and ensures each category has a sufficient number of samples for robust cluster analysis.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Age\_binned}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Age_binned.png}
+%     \caption{Distribution of binned age groups.}
+% \end{figure}
+% \( \text{age\_binned}(a) = \)
+% $$
+% \begin{cases}
+% \text{Unknown\_Age} & \text{if } a = \text{NaN} \\
+% \text{16--25} & \text{if } a \leq 25 \\
+% \text{26--35} & \text{if } 25 < a \leq 35 \\
+% \text{36--45} & \text{if } 35 < a \leq 45 \\
+% \text{46--55} & \text{if } 45 < a \leq 55 \\
+% \text{56+} & \text{if } a > 55 \\
+% \text{Unlabelled} & \text{otherwise}
+% \end{cases}
+% $$
+% \textbf{Justification:} Continuous age data was binned into standard demographic ranges. This transformation reduces noise from individual age variations and allows the model to capture broader trends associated with different age groups.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Day\_name\_binned}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Day_name_binned.png}
+%     \caption{Distribution of binned day names.}
+% \end{figure}
+% \( \text{day\_name\_binned}(e) = \)
+% $$
+% \begin{cases}
+% \text{Weekend} & \text{if } e \in \{\text{"Dissabte"}, \text{"Diumenge"}\} \\
+% e & \text{otherwise}
+% \end{cases}
+% $$
+% \textbf{Justification:} Saturday and Sunday were combined into a single "Weekend" category to capture the distinct traffic patterns and activities that occur on non-working days, which is more meaningful for analysis than individual weekend days.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Season}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Season.png}
+%     \caption{Distribution of accidents by season.}
+% \end{figure}
+% \( \text{season}(m) = \)
+% $$
+% \begin{cases}
+% \text{Winter} & \text{if } m \in \{12, 1, 2\} \\
+% \text{Spring} & \text{if } m \in \{3, 4, 5\} \\
+% \text{Summer} & \text{if } m \in \{6, 7, 8\} \\
+% \text{Fall} & \text{otherwise}
+% \end{cases}
+% $$
+% \textbf{Justification:} Months were grouped into four meteorological seasons. This captures cyclical patterns in weather, daylight hours, and holiday periods that influence driving conditions and accident frequencies.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Traffic\_density\_binned}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Traffic_density_binned.png}
+%     \caption{Distribution of binned traffic density levels.}
+% \end{figure}
+% \( \text{traffic\_density\_binned}(d) = \)
+% $$
+% \begin{cases}
+% \text{Dense\_Traffic} & \text{if } d \in \{3, 4, 5, 6\} \\
+% \text{Fairly\_dense\_traffic} & \text{if } d = 2 \\
+% \text{Fairly\_sparse\_traffic} & \text{if } d = 1 \\
+% \text{Sparse\_traffic} & \text{if } d = 0
+% \end{cases}
+% $$
+% \textbf{Justification:} The original 7-point traffic density scale was condensed into four ordinal categories. This grouping reduces granularity, preventing the model from overfitting to minor traffic fluctuations while preserving the essential ordinal structure.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Vehicle\_type\_binned}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Vehicle_type_binned.png}
+%     \caption{Distribution of binned vehicle types.}
+% \end{figure}
+% \( \text{vehicle\_type\_binned}(v) = \)
+% $$
+% \begin{cases}
+% \text{Car} & \text{if } v \in \{\text{Turisme}, \text{Taxi}, \dots\} \\
+% \text{Motorcycle} & \text{if } v \in \{\text{Motocicleta}, \text{Ciclomotor}, \dots\} \\
+% \text{Large Vehicles} & \text{if } v \in \{\text{Furgoneta}, \text{Autobús}, \dots\} \\
+% \text{Other} & \text{if } v \in \{\text{Altres vehicles amb motor}, \dots\} \\
+% \text{Non-motorized (Excluded)} & \text{if } v \in \{\text{Bicicleta}, \dots\} \\
+% \text{Unlabelled} & \text{otherwise}
+% \end{cases}
+% $$
+% \textbf{Justification:} Over 20 specific vehicle types were aggregated into functionally similar groups (Car, Motorcycle, Large Vehicle). This reduces dimensionality and focuses the analysis on broad vehicle classes with distinct risk profiles. Non-motorized vehicles were isolated and subsequently excluded from the analysis.
+
+% \rule{\linewidth}{0.4pt}
+
+% \subsubsection*{Day\_type\_binned}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.4\linewidth]{Histogram_engineered/Day_type.png}
+%     \caption{Distribution of day types.}
+% \end{figure}
+% \( \text{day\_type\_binned}(\text{accident}) = \)
+% $$
+% \begin{cases}
+% \text{Holiday} & \text{if } \text{accident}(\text{Near\_holiday}) = \text{"Holiday"} \\
+% \text{Weekend} & \text{if } \text{accident}(\text{Day\_name}) \in \{\text{"dissabte"}, \text{"diumenge"}\} \\
+% \text{Workday} & \text{otherwise}
+% \end{cases}
+% $$
+% \textbf{Justification:} A composite feature was created to classify each day as a 'Workday,' 'Weekend,' or 'Holiday.' This captures the primary nature of the day's traffic flow and activity levels, which is a more direct indicator than the day of the week alone.
+
+% ---------------------------------------------------------------
+
+% \subsection{Appendix: Feature Engineering and Justifications}
+% We also give justification for the variables that are to be investigated. \vspace{\baselineskip}
+
+% \textbf{Gender:} Men and women may exhibit different driving habits and attitudes toward risk that result in accidents with different characteristics. Men and women may follow dissimilar driving patterns \cite{BERGDAHL2005595}. Women with children may transport children to school in the morning or drive to stores for groceries or scurry around for other errands during mornings. Men, in contrast, who may alertly and cautiously drive to work in the mornings, may observe less stringency in afternoons after working an eight to twelve hour shift or perhaps relaxing at the end of the day with an alcoholic beverage.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Gender} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% H & 9313 & 72.04 \\
+% D & 2719 & 21.03 \\
+% Unknown\_Gender & 896 & 6.93 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Gender Distribution Analysis}
+% \label{tab:Gender_count}
+% \end{figure}
+
+
+% \textbf{Season: }Though the climate in Barcelona is relatively temperate throughout the year, traffic accidents may increase in certain seasons with additional driving patterns such as at Christmas or summer holidays \cite{THEOFILATOS2014244}. The following table lists the variables with corresponding values.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Season} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Spring & 3394 & 26.25 \\
+% Winter & 3274 & 25.32 \\
+% Fall & 3230 & 24.98 \\
+% Summer & 3030 & 23.44 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Season Distribution Analysis}
+% \label{tab:Season_count}
+% \end{figure}
+
+
+% \textbf{Traffic Density:} Areas with high traffic density, which is often associated with low-speed vehicles, may result in different types of accidents and consequently different driver profiles than in less dense areas with vehicles traveling faster than they would in congested locales \cite{HASHIMOTO2016262}. An intuitive hypothesis maintained that a preponderance of motor vehicle accidents would occur in high density streets and roadways \cite{ijerph17041393}. The underlying premise of the hypothesis contended that cars, motorcycles, and other vehicles would encounter accidents more frequently in relatively compact and congested areas than in more sparsely trafficked zones. With a calculated percentage of accidents thousand vehicles, dense districts with more vehicles than less dense roadways would account for more accidents. The first round of clusterings revealed otherwise. The overall density waned with sufficient frequency to attain adequacy.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{rrl}
+% \toprule
+% \textbf{Traffic\_density} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% 0 & 3717 & 28.75 \\
+% 1 & 1879 & 14.53 \\
+% 2 & 5505 & 42.58 \\
+% 3 & 1047 & 8.1 \\
+% 4 & 473 & 3.66 \\
+% 5 & 266 & 2.06 \\
+% 6 & 41 & 0.32 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Traffic_density Distribution Analysis}
+% \label{tab:Traffic_density_count}
+% \end{figure}
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Traffic\_density\_binned} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Fairly\_dense\_traffic & 5505 & 42.58 \\
+% Sparse\_traffic & 3717 & 28.75 \\
+% Fairly\_sparse\_traffic & 1879 & 14.53 \\
+% Dense\_Traffic & 1827 & 14.13 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Traffic_density_binned Distribution Analysis}
+% \label{tab:Traffic_density_binned_count}
+% \end{figure}
+
+
+
+
+
+% \textbf{Type of Vehicle:} The analysis encompasses cars, motorcycles, and other motorized transport such as commercial vans, trucks, and buses. The analysis excluded non-motorized personal vehicles such as bicycles or scooters, which represented less than 6\% of the data. Inclusion of these two variables seemingly with relatively insignificant percent of total accidents could theoretically detract the algorithm from clustering the motorized vehicles accurately with unrelated variables relevant only to personal, and pedestrians. 
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Vehicle\_type\_binned} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Car & 5838 & 45.16 \\
+% Motorcycle & 5025 & 38.87 \\
+% Large Vehicles & 1927 & 14.91 \\
+% Other & 138 & 1.07 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Vehicle_type_binned Distribution Analysis}
+% \label{tab:Vehicle_type_binned_count}
+% \end{figure}
+
+% \textbf{Day Name: }As traffic patterns may differ by the day of the week—Sundays with leisure travel versus Mondays with commute to work,—the accidents could occur more frequently on some days rather than others. The analysis is tied to metrics for the day of the week. One version includes all seven days. Another version compressed the days into two groupings: week days, Monday to Friday, and weekends, Saturday and Sunday.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Day\_name\_binned} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Dissabte-Diumenge & 2614 & 20.22 \\
+% Divendres & 2137 & 16.53 \\
+% Dimarts & 2101 & 16.25 \\
+% Dijous & 2063 & 15.96 \\
+% Dilluns & 2007 & 15.52 \\
+% Dimecres & 2006 & 15.52 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Day_name_binned Distribution Analysis}
+% \label{tab:Day_name_binned_count}
+% \end{figure}
+
+% \textbf{Day Type:} This variable categorizes each day as a weekday, weekend, or public holiday. The rationale for its inclusion is based on the intuition that the characteristics of traffic and driver behaviors may vary depending on the type of day. For example, weekdays typically involve commuter traffic during rush hours, while weekends may see more recreational travel and potentially higher incidences of late-night driving. Public holidays often lead to increased long-distance travel, tourist travel, and congestion, which could elevate the risk of accidents. 
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Day\_type} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Workday & 9422 & 72.88 \\
+% Weekend & 2360 & 18.25 \\
+% holiday & 1146 & 8.86 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Day_type Distribution Analysis}
+% \label{tab:Day_type_count}
+% \end{figure}
+
+% \textbf{Age of Driver:} The data set from police reports lists driver age from 16 years to 56+. As with gender, behavior and attitudes toward risk could account for some accidents \cite{JONAH1986255}. The K-means methodology could compute distances from the centroid; however, to be consistent with the K-mode process for the other variables, the analysis partitioned age into six distinct categories, each of which attempts to represent behavior and risk attitudes. The analysis consolidated the ages into six groups, which are as follows:
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Age\_binned} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% 46-55 & 2771 & 21.43 \\
+% 26-35 & 2708 & 20.95 \\
+% 36-45 & 2603 & 20.13 \\
+% 56+ & 2335 & 18.06 \\
+% 16-25 & 1552 & 12.0 \\
+% Unknown\_Age & 959 & 7.42 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Age_binned Distribution Analysis}
+% \label{tab:Age_binned_count}
+% \end{figure}
+
+% \textbf{Type of Accident:} The police reports describe the type of accident such as rear ending or lateral collision. The type of accident may correlate to characteristics of the driver and the nature of the accident. Bumper to bumper accidents may signal inattention of the driver by following the vehicle ahead too closely to stop while lateral collisions happen primarily in intersections with orthogonal impacts.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Accident\_type\_binned} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Bumper-bumper & 3982 & 30.8 \\
+% Lateral collision & 3349 & 25.91 \\
+% Frontal/fronto-lateral collision & 2384 & 18.44 \\
+% Other & 1703 & 13.17 \\
+% Collision with static element & 829 & 6.41 \\
+% Motorcycle fall & 681 & 5.27 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Accident_type_binned Distribution Analysis}
+% \label{tab:Accident_type_binned_count}
+% \end{figure}
+
+% \textbf{Day Shift: }This variable was split into morning (mati), afternoon (tarda), and night (nit). The intuition here was that traffic patterns and accident frequencies vary significantly throughout different periods of the day, with peak hours and commuting times potentially showing higher incident rates. The distribution of accidents across different time periods provides insights into temporal risk factors. The following table lists the variables with corresponding values.
+
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{lrl}
+% \toprule
+% \textbf{Day\_shift} & \textbf{Count} & \textbf{Percentage} \\
+% \midrule
+% Tarda & 6123 & 47.36 \\
+% Matí & 5218 & 40.36 \\
+% Nit & 1587 & 12.28 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Day_shift Distribution Analysis}
+% \label{tab:Day_shift_count}
+% \end{figure}
+
+\end{document}

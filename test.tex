@@ -1,0 +1,92 @@
+\begin{longtable}{lll}
+\caption{Discarded variables by category with justification (* denotes engineered features)}\\
+\hline
+\textbf{Category} & \textbf{Discarded Variables} & \textbf{Justification} \\
+\hline
+\endfirsthead 
+
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{} -- continued from previous page}} \\
+\hline
+\textbf{Category} & \textbf{Discarded Variables} & \textbf{Justification} \\
+\hline
+\endhead 
+
+\\
+\hline
+
+\multicolumn{3}{r}{{\small\textit{Continued on next page}}}\\
+\endfoot
+
+\\
+\hline
+
+\multicolumn{3}{l}{\small\textit{*Denotes an engineered feature.}} \\
+\endlastfoot 
+
+\textbf{Accident Details} & Accident\_severity & Outcome variable, not predictive\\
+& Codi\_Incident & Administrative code, not predictive \\
+& Descripcio\_Incident & Free text description, difficult to process \\
+& Mediate\_cause & Ambiguous and inconsistent \\
+& Number\_dead & Outcome variable, not predictive   \\
+& Number\_of\_vehicles\_involved & Outcome variable, not predictive   \\
+& Number\_serious\_injured & Outcome variable, not predictive  \\
+& Number\_slight\_injured & Outcome variable, not predictive  \\
+& Number\_victims & Outcome variable, not predictive   \\
+& Numero\_incidents\_GUB & Administrative reference number \\
+
+\hline
+
+\textbf{Vehicle Information} & Brand & Too many categories, not predictive \\
+& Color & Unreliable and not predictive \\
+& Color\_binned* & Even binned, lacks predictive value \\
+& Model & Too granular, vehicle type is sufficient \\
+
+\hline
+
+\textbf{Location Data} & Area\_code & Administrative code, no safety relevance \\
+& Coordenada\_UTM\_X\_ED50 & Overly specific location data \\
+& Coordenada\_UTM\_Y\_ED50 & Overly specific location data \\
+& District & Granular and skewed \\
+& District\_code & Administrative code, not predictive \\
+& Latitude & Overly specific location data \\
+& Longitude & Overly specific location data \\
+& Neighbourhood & Granular and skewed \\
+& Num\_postal & Administrative code, not predictive \\
+& Street\_code & Administrative code, not predictive \\
+
+\hline
+
+\textbf{Driver/Person Data} & Driver\_displacement\_reason & Low coverage \& value \\
+& File\_num & Administrative reference number \\
+& License\_age & Correlated with age binned \\
+& License\_age\_binned* & Redundant \\
+& Person\_type & Always "conductor" (driver) \\
+
+\hline
+
+\textbf{Pedestrian Data} & Pedestrian\_hit\_location & Non-causal outcome \\
+& Pedestrian\_situation & Irrelevant for drivers \\
+& Reason\_displacement\_pedestrian & Too specific  \\
+
+\hline
+
+\textbf{Time Variables} & Day & Captured by Day\_name \& Day\_type \\
+& Hour & Captured by Day\_shift \\
+& Hour\_quadrant* & Captured by Day\_shift \\
+& Month & Captured by Season \\
+& Month\_name & Redundant with Season \& Month \\
+& Quarter & Seasonal information already captured \\
+& Year & Always 2024 \\
+
+\hline
+
+\textbf{Weather Data} & Humidity\_Mean & Minimal direct impact on accident occurrence \\
+& Precipitation & Weather impact captured in other variables \\
+& Pressure\_Mean & No clear relationship with accident risk \\
+& Solar\_Radiation & Indirect lighting effect, minimal predictive value \\
+& Temp\_Mean & Seasonal effects already captured \\
+& Wind\_Dir\_Mean & Wind direction has minimal accident impact \\
+& Wind\_Speed\_Mean & Limited direct effect on accident occurrence \\
+
+\end{longtable}
